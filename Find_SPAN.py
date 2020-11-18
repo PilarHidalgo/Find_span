@@ -3,6 +3,8 @@
 
 """
 Find_span: program to find span (made by yourself) into a multilingual text.
+Autor: Pilar Hidalgo
+Github: https://github.com/PilarHidalgo
 
 Usage:
     find_span(input_data, diccionary,output_format= ('tuple','just_terms','just_label')):
