@@ -1,7 +1,7 @@
-# Find_span: mini-programa multilingue para encontrar y extraer términos y spans-terminos (hechos en casa  :blush:)
+# Find_span: mini-programa multilingue para encontrar y extraer términos y spans-terminos (hechos en casa :blush:)
 Esta herramienta permite englobar un conjunto de palabras (patterns) asignadas a un SPAN o categoría. El uso de esta herramienta es multiple, desde identificar sinónimos,  corrector de ortografía, hasta etiquetado de palabras en categorías como Persona, Organización, Lugar, lo único que necesitas es un diccionario donde para generar los SPAN.
 
-# Find_span: program to find span (made by yourself) into a multilingual text.
+# Find_span: mini-program to find span (made by yourself) into a multilingual text.
 
 ### Usage:
     find_span(input_data, diccionary,output_format= ('tuple','just_terms','just_label')):
