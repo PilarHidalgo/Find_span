@@ -12,3 +12,5 @@ Esta herramienta permite englobar un conjunto de palabras (patterns) asignadas a
 Given a text (input_data) and a dictionary created especially to identify SPAN's, related terms or words, this little program can extract terms in three formats: tuple (e.g ('label','term/list of terms')),just the term/terms or just the  label of the SPAN. 
 
 Further details are in the comments within the code.
+
+PY Resource: https://test.pypi.org/project/Find-SPAN/0.0.1/
