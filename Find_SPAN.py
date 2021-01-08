@@ -7,7 +7,9 @@ Autor: Pilar Hidalgo
 Github: https://github.com/PilarHidalgo
 
 Usage:
-    find_span(input_data, diccionary,output_format= ('tuple','just_terms','just_label')):
+    from Find_SPAN import Find_SPAN as fs
+    finder_r=fs.SpanFinder('Dictionary.xlsx','Sheet','excel')
+    finder_r.find_span('i love Dog’s tooth in pants','tuple')
 
  Given a text (input_data) and a dictionary created especially to identify SPAN's, related terms or words, 
  this little program can extract terms in three formats: tuple (e.g ('label','term/list of terms')),just the term/terms or just the
@@ -65,56 +67,45 @@ import re
 
 
 #FIND SPAN FUNCTION
-def find_SPAN(sentence,diccionary_o,Type_file_dict,op_format):
-    #read a diccionary
-    #df=pd.read_json(diccionarys)
-    if Type_file_dict=='json':
-        df=pd.read_json(diccionary_o)
-        df1=df[['label','pattern']]
+class SpanFinder:
+    def __init__(self,io,sheetname,Type_file_dict):
+        self.io = io        
+        self.Type_file_dict= Type_file_dict
+        self.sheetname = sheetname
+        #self.op_format = op_format
+        self.df= self.read_data()
+        self.patterns = self.read_patterns()
+        self.nlp = self.set_nlp()
+        self.trans = self.make_trans()
+    #FIND SPAN FUNCTION
+    def read_data(self):
+        if self.Type_file_dict=='json':
+            df=pd.read_json(self.io)
+        elif self.Type_file_dict=='excel':
+            df=pd.read_excel(self.io,sheet_name=self.sheetname)
+        elif self.Type_file_dict=='csv':
+            df=pd.read_csv(self.io)
+        #df
+        return df
+
+    def read_patterns(self):#,Type_file_dict):
+        a=self.df
         #carga el diccionario por label
-        for k in range(2,len(df.columns)-1):
-            exec(f'df{k} = df[["label","pattern.{k}"]]')
-            #rename las columnas
+        for k in range(2,len(a.columns)-1):
+                exec(f'a{k} = a[["label","pattern.{k}"]]')
+                #rename las columnas
         sheets=[]    
         for var in dir():
             if isinstance(locals()[var], pd.core.frame.DataFrame)  and var[0]!='_':
                 sheets.append(var)
         df_list=[]
         for i in range(1,len(sheets)): 
-            df_list.append(eval(sheets[i]))
-        
-        #rename patterns columns
+            df_list.append(eval(sheets[i]))        
+
+            #rename patterns columns
         for k in range(0,len(df_list)):#(len(df.columns)-2)):
             df_list[k]=df_list[k].rename(columns={df_list[k].columns[1]:"pattern"}, inplace = False)
-        #diccionario
-        for k in range(0,len(df_list)):
-            exec(f'patterns{k+1} = df_list[k].to_dict(orient="records")')
-        patt_list=[]    
-        for var in dir():
-            if var.startswith('patterns')==True and var[0]!='_':
-                patt_list.append(eval(var))
-        patterns=[]
-        for i in range(0,len(patt_list)):
-            patterns= patterns+patt_list[i]
-    elif Type_file_dict=='excel':
-        df=pd.read_excel(diccionary_o)
-        df1=df[['label','pattern']]
-        #carga el diccionario por label
-        for k in range(2,len(df.columns)-1):
-            exec(f'df{k} = df[["label","pattern.{k}"]]')
-            #rename las columnas
-        sheets=[]    
-        for var in dir():
-            if isinstance(locals()[var], pd.core.frame.DataFrame)  and var[0]!='_':
-                sheets.append(var)
-        df_list=[]
-        for i in range(1,len(sheets)): 
-            df_list.append(eval(sheets[i]))
-        
-        #rename patterns columns
-        for k in range(0,len(df_list)):#(len(df.columns)-2)):
-            df_list[k]=df_list[k].rename(columns={df_list[k].columns[1]:"pattern"}, inplace = False)
-        #diccionario
+            #diccionario
         for k in range(0,len(df_list)):
             exec(f'patterns{k+1} = df_list[k].to_dict(orient="records")')
         patt_list=[]    
@@ -124,89 +115,63 @@ def find_SPAN(sentence,diccionary_o,Type_file_dict,op_format):
         patterns=[]
         for i in range(0,len(patt_list)):
             patterns= patterns+patt_list[i]   
-    elif Type_file_dict=='csv':
-        df=pd.read_csv(diccionary_o)
-        df1=df[['label','pattern']]
-        #carga el diccionario por label
-        for k in range(2,len(df.columns)-1):
-            exec(f'df{k} = df[["label","pattern.{k}"]]')
-            #rename las columnas
-        sheets=[]    
-        for var in dir():
-            if isinstance(locals()[var], pd.core.frame.DataFrame)  and var[0]!='_':
-                sheets.append(var)
-        df_list=[]
-        for i in range(1,len(sheets)): 
-            df_list.append(eval(sheets[i]))
-        
-        #rename patterns columns
-        for k in range(0,len(df_list)):#(len(df.columns)-2)):
-            df_list[k]=df_list[k].rename(columns={df_list[k].columns[1]:"pattern"}, inplace = False)
-        #diccionario
-        for k in range(0,len(df_list)):
-            exec(f'patterns{k+1} = df_list[k].to_dict(orient="records")')
-        patt_list=[]    
-        for var in dir():
-            if var.startswith('patterns')==True and var[0]!='_':
-                patt_list.append(eval(var))
-        patterns=[]
-        for i in range(0,len(patt_list)):
-            patterns= patterns+patt_list[i]
-    elif Type_file_dict=='None':
-        patterns=Diccionary_var
-    #RULER MATCHER
-    nlp = MultiLanguage()
-    ruler = EntityRuler(nlp)
-    ruler.add_patterns(patterns)
-    nlp.add_pipe(ruler)
-
-    if op_format=='tuple':
-        #Preprocess the input text
+        return patterns
+    
+    def set_nlp(self):
+        #Crear el objeto NLP
+        nlp = MultiLanguage()
+        ruler = EntityRuler(nlp)
+        ruler.add_patterns(self.patterns)
+        nlp.add_pipe(ruler)
+        return nlp
+    
+    def make_trans(self):
+        #Preprocesar la entrada
         a,b = 'áéíóúü','aeiouu'
         trans = str.maketrans(a,b)
-        sentence=sentence.lower().translate(trans)
-        doc = nlp(sentence)
-        #Returns the actual label of the entity
-        if (sentence=='' or  sentence==' ' or sentence=='NaN'):
-            output=['No found']
-        else: 
-            output= list(set([(ent.label_,ent.text) for ent in doc.ents]))
-        #element no found
-        if output!=[]:
-            output=output
-        else: output=['No found']
-        return output[0]
-
-    if op_format=='text':
-        #Preprocess the input text
-        a,b = 'áéíóúü','aeiouu'
-        trans = str.maketrans(a,b)
-        sentence=sentence.lower().translate(trans)
-        doc = nlp(sentence)
-        #Returns the actual label of the entity
-        if (sentence=='' or  sentence==' ' or sentence=='NaN'):
-            output=['No found']
-        else: 
-            output= list(set([ent.text for ent in doc.ents]))
-        #element no found
-        if output!=[]:
-            output=output
-        else: output=['No found']
-        return output[0]
-
-    if op_format=='label':
-        #Preprocess the input text
-        a,b = 'áéíóúü','aeiouu'
-        trans = str.maketrans(a,b)
-        sentence=sentence.lower().translate(trans)
-        doc = nlp(sentence)
-        #Returns the actual label of the entity
-        if (sentence=='' or  sentence==' ' or sentence=='NaN'):
-            output=['No found']
-        else: 
-            output= list(set([ent.label_ for ent in doc.ents]))
-        #label no found
-        if output!=[]:
-            output=output
-        else: output=['No found']
-        return output[0] 
+        return trans
+    
+    def find_span(self, sentence,op_format):
+        #sentence=sentence.lower().translate(self.trans)
+        #doc = self.nlp(sentence)
+        #Devuelve la etiqueta real de la entidad
+        if op_format=='tuple':
+            sentence=sentence.lower().translate(self.trans)
+            doc = self.nlp(sentence)
+                #Returns the actual label of the entity
+            if (sentence=='' or  sentence==' ' or sentence=='NaN'):
+                output=['No found']
+            else: 
+                output= list(set([(ent.label_,ent.text) for ent in doc.ents]))
+                #element no found
+            if output!=[]:
+                output=output
+            else: output=['No found']
+            return output[0]
+    
+        if op_format=='text':
+            sentence=sentence.lower().translate(self.trans)
+            doc = self.nlp(sentence)
+                #Returns the actual label of the entity
+            if (sentence=='' or  sentence==' ' or sentence=='NaN'):
+                output=['No found']
+            else: 
+                output= list(set([(ent.text) for ent in doc.ents]))
+                #element no found
+            if output!=[]:
+                output=output
+            else: output=['No found']
+            return output[0]
+        if op_format=='label':
+            sentence=sentence.lower().translate(self.trans)
+            doc = self.nlp(sentence)
+                #Returns the actual label of the entity
+            if (sentence=='' or  sentence==' ' or sentence=='NaN'):
+                output=['No found']
+            else: 
+                output= list(set([(ent.label_) for ent in doc.ents]))
+                #element no found
+            if output!=[]:
+                output=output
+            else: output=['No found']
+            return output[0] 
