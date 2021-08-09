@@ -89,10 +89,10 @@ class SpanFinder:
         return df
 
     def read_patterns(self):#,Type_file_dict):
-        a=self.df
+        df0=self.df
         #carga el diccionario por label
-        for k in range(2,len(a.columns)-1):
-                exec(f'a{k} = a[["label","pattern.{k}"]]')
+        for k in range(1,len(df.columns)-1):
+                exec(f'df{k} = a[["label","pattern.{k}"]]')
                 #rename las columnas
         sheets=[]    
         for var in dir():
